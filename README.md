@@ -50,3 +50,11 @@ And after an extra payment:
 New Amortization Schedule (Post Extra Payment):
 Month	Payment	Interest    Principal	Remaining Balance
 ...
+````
+
+## Instructions:
+- Java 11 (or above) JRE installed
+- download `mortgage-calculator-cli.jar` to local and run in commandline
+`java -DinputPath=/json/input/file/location/input.json -DoutputPath=/results/file/folder/ -jar /jar/folder/mortgage-calculator-cli.jar`
+- `inputPath` option is mandatory
+- `outputPath` option is optional, by default or in case of invalid path, results file will be saved to jar folder
