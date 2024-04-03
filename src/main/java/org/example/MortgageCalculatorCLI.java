@@ -28,7 +28,7 @@ import static org.example.service.MortgageCalculatorService.calculateAmortizatio
 public class MortgageCalculatorCLI {
 
     private static final String DEFAULT_OUTPUT_FILE_NAME = "amortizationSchedule.txt";
-    private static final String TABLE_COLUMN = "Month\tPayment\t\tInterest\tPrincipal\tRemaining Balance";
+    private static final String TABLE_COLUMN = "Month\tPayment\t\tInterest\tPrincipal\tRemaining Balance\n";
 
     public static void main(String[] args) {
         try {
@@ -38,78 +38,36 @@ public class MortgageCalculatorCLI {
                 System.err.println("Error: Please provide the input path using the -DinputPath=<path> option.");
                 return;
             }
-
-            /** input file parsing */
+            // input file parsing
             File inputFile = new File(inputPath);
             JSONParser parser = new JSONParser();
             JSONObject jsonInput =
                     (JSONObject) parser.parse(new FileReader(inputFile));
-
-            /** json object parsing */
+            // json object parsing
             InputParam param = parseInputJson(jsonInput);
 
-            /** param valid check */
-            checkParamValidity(param);
-
-            /** calculate Amortization Schedule without extra payment */
+            /** Amortization Schedule without extra payment  */
+            // calculate Amortization Schedule without extra payment
             AmortizationSchedule amortizationSchedule = calculateAmortizationSchedule(param);
-
+            // check weather output path is specified or valid
             Path resolvedOutputPath = resolveOutputPath(outputPath);
-
+            // print to console and save to file
             printAmortizationSchedule(amortizationSchedule);
-            saveMajorResultsToFile(resolvedOutputPath, amortizationSchedule);
+            saveMajorResults2File(resolvedOutputPath, amortizationSchedule);
 
+            /** Amortization Schedule with extra payment  */
             ExtraPayment extraPayment = param.getExtraPayment();
             int extraPaymentMonth = extraPayment.getExtraPaymentMonth();
-
-            /** Ajust Amortization Schedule with extra payment*/
-            AmortizationSchedule modifiedAmortizationSchedule = applyExtraPayment(amortizationSchedule,
-                    extraPayment);
-
+            // Ajust Amortization Schedule with extra payment
+            AmortizationSchedule modifiedAmortizationSchedule =
+                    applyExtraPayment(amortizationSchedule, extraPayment);
+            // print to console and save to file
             printExtraAmortizationSchedule(extraPaymentMonth, modifiedAmortizationSchedule);
-            appendExtraResultsToFile(resolvedOutputPath, modifiedAmortizationSchedule, extraPaymentMonth);
+            appendExtraResults2File(resolvedOutputPath, modifiedAmortizationSchedule, extraPaymentMonth);
 
         } catch (Exception e) {
-            e.printStackTrace();
             throw new RuntimeException(e);
         }
-    }
-
-    private static void printExtraAmortizationSchedule(int extraPaymentMonth,
-                                                       AmortizationSchedule modifiedAmortizationSchedule)
-    {
-        System.out.println("\nNew Amortization Schedule (Post Extra Payment):");
-        System.out.println(TABLE_COLUMN);
-        for (int i = extraPaymentMonth; i < extraPaymentMonth + 24; i++) {
-            AmortizationEntry entry = modifiedAmortizationSchedule.getAmortizationEntry(i);
-            System.out.println((i + 1) + "\t\t$" + entry.getPayment().setScale(2, RoundingMode.HALF_UP) +
-                    "\t\t$" + entry.getInterest().setScale(2, RoundingMode.HALF_UP) +
-                    "\t\t$" + entry.getPrincipal().setScale(2, RoundingMode.HALF_UP) +
-                    "\t\t$" + entry.getRemainingBalance().setScale(2, RoundingMode.HALF_UP));
-        }
-    }
-
-    public static void appendExtraResultsToFile(Path resolvedOutputPath,
-                                                AmortizationSchedule modifiedAmortizationSchedule,
-                                                int extraPaymentMonth)
-    {
-        try (FileWriter writer = new FileWriter(resolvedOutputPath.toFile(), true)) {
-            writer.write("\nNew Amortization Schedule (Post Extra Payment):\n");
-            writer.write(TABLE_COLUMN);
-            for (int i = extraPaymentMonth; i < extraPaymentMonth + 24; i++) {
-                AmortizationEntry entry = modifiedAmortizationSchedule.getAmortizationEntry(i);
-                writer.write((i + 1) + "\t\t$" + entry.getPayment().setScale(2, RoundingMode.HALF_UP) +
-                        "\t\t$" + entry.getInterest().setScale(2, RoundingMode.HALF_UP) +
-                        "\t\t$" + entry.getPrincipal().setScale(2, RoundingMode.HALF_UP) +
-                        "\t\t$" + entry.getRemainingBalance().setScale(2, RoundingMode.HALF_UP) + "\n");
-            }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private static void checkParamValidity(InputParam param) {
-        // todo
     }
 
     private static InputParam parseInputJson(JSONObject jsonInput) {
@@ -127,22 +85,8 @@ public class MortgageCalculatorCLI {
                 ).build();
     }
 
-    public static void printAmortizationSchedule(AmortizationSchedule amortizationSchedule) {
-        System.out.println("\nMonthly payment: $"
-                + amortizationSchedule.getMonthlyPayment().setScale(2, RoundingMode.HALF_UP));
-        System.out.println("\nAmortization Schedule:");
-        System.out.println(TABLE_COLUMN);
-        for (int i = 0; i < amortizationSchedule.getMonths(); i++) {
-            AmortizationEntry entry = amortizationSchedule.getAmortizationEntry(i);
-            System.out.println((i + 1) + "\t\t$" + entry.getPayment().setScale(2, RoundingMode.HALF_UP) +
-                    "\t\t$" + entry.getInterest().setScale(2, RoundingMode.HALF_UP) +
-                    "\t\t$" + entry.getPrincipal().setScale(2, RoundingMode.HALF_UP) +
-                    "\t\t$" + entry.getRemainingBalance().setScale(2, RoundingMode.HALF_UP));
-        }
-    }
-
     /**
-     * check if output path valid, if not, save file to jar folder
+     * check if output path is specified or valid, if not, save file to jar folder
      * @param outputPath
      * @return
      */
@@ -173,7 +117,54 @@ public class MortgageCalculatorCLI {
         return resolvedOutputPath;
     }
 
-    private static void saveMajorResultsToFile(Path outputPath, AmortizationSchedule amortizationSchedule) throws IOException {
+    private static void printExtraAmortizationSchedule(int extraPaymentMonth,
+                                                       AmortizationSchedule modifiedAmortizationSchedule)
+    {
+        System.out.println("\nNew Amortization Schedule (Post Extra Payment):");
+        System.out.println(TABLE_COLUMN);
+        for (int i = extraPaymentMonth; i < extraPaymentMonth + 24; i++) {
+            AmortizationEntry entry = modifiedAmortizationSchedule.getAmortizationEntry(i);
+            System.out.println((i + 1) + "\t\t$" + entry.getPayment().setScale(2, RoundingMode.HALF_UP) +
+                    "\t\t$" + entry.getInterest().setScale(2, RoundingMode.HALF_UP) +
+                    "\t\t$" + entry.getPrincipal().setScale(2, RoundingMode.HALF_UP) +
+                    "\t\t$" + entry.getRemainingBalance().setScale(2, RoundingMode.HALF_UP));
+        }
+    }
+
+    public static void appendExtraResults2File(Path resolvedOutputPath,
+                                                AmortizationSchedule modifiedAmortizationSchedule,
+                                                int extraPaymentMonth)
+    {
+        try (FileWriter writer = new FileWriter(resolvedOutputPath.toFile(), true)) {
+            writer.write("\nNew Amortization Schedule (Post Extra Payment):\n");
+            writer.write(TABLE_COLUMN);
+            for (int i = extraPaymentMonth; i < extraPaymentMonth + 24; i++) {
+                AmortizationEntry entry = modifiedAmortizationSchedule.getAmortizationEntry(i);
+                writer.write((i + 1) + "\t\t$" + entry.getPayment().setScale(2, RoundingMode.HALF_UP) +
+                        "\t\t$" + entry.getInterest().setScale(2, RoundingMode.HALF_UP) +
+                        "\t\t$" + entry.getPrincipal().setScale(2, RoundingMode.HALF_UP) +
+                        "\t\t$" + entry.getRemainingBalance().setScale(2, RoundingMode.HALF_UP) + "\n");
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static void printAmortizationSchedule(AmortizationSchedule amortizationSchedule) {
+        System.out.println("\nMonthly payment: $"
+                + amortizationSchedule.getMonthlyPayment().setScale(2, RoundingMode.HALF_UP));
+        System.out.println("\nAmortization Schedule:");
+        System.out.println(TABLE_COLUMN);
+        for (int i = 0; i < amortizationSchedule.getMonths(); i++) {
+            AmortizationEntry entry = amortizationSchedule.getAmortizationEntry(i);
+            System.out.println((i + 1) + "\t\t$" + entry.getPayment().setScale(2, RoundingMode.HALF_UP) +
+                    "\t\t$" + entry.getInterest().setScale(2, RoundingMode.HALF_UP) +
+                    "\t\t$" + entry.getPrincipal().setScale(2, RoundingMode.HALF_UP) +
+                    "\t\t$" + entry.getRemainingBalance().setScale(2, RoundingMode.HALF_UP));
+        }
+    }
+
+    private static void saveMajorResults2File(Path outputPath, AmortizationSchedule amortizationSchedule) throws IOException {
         try (FileWriter writer = new FileWriter(outputPath.toFile())) {
             writer.write("Monthly payment: $" + amortizationSchedule.getMonthlyPayment().setScale(2,
                     RoundingMode.HALF_UP) + "\n");
@@ -188,8 +179,4 @@ public class MortgageCalculatorCLI {
             }
         }
     }
-
-
 }
-
-
